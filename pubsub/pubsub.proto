@@ -1,0 +1,100 @@
+syntax = "proto3";
+package pubsub;
+
+option go_package = "github.com/weiwenchen2022/grpc-pubsub/pubsub";
+
+// The pubsub service definition.
+service Pubsub {
+    // Subscribes the client to the specified channels.
+    rpc Subscribe(stream SubscribeRequest) returns (stream Message) {}
+
+    // Unsubscribes the client from the given channels, or from all of them if none is given.
+    // rpc Unsubscribes(SubscribeRequest) returns (stream Message) {}
+
+    // Posts a message to the given channel.
+    rpc Publish(PublishRequest) returns (PublishReply) {}
+
+    // Lists the currently active channels.
+    //
+    // An active channel is a Pub/Sub channel with one or more subscribers (excluding clients
+    // subscribed to patterns).
+    // If no pattern is specified, all the channels are listed, otherwise if pattern is specified
+    // only channels matching the specified glob-style pattern are listed.
+    rpc Channels(ChannelsRequest) returns (ChannelsReply) {}
+
+    // Returns the number of subscribers (exclusive of clients subscribed to patterns) for the
+    // specified channels.
+    //
+    // Note that it is valid to call this command without channels. In this case it will just return
+    // an empty list.
+    rpc NumSub(NumSubRequest) returns (NumSubReply) {}
+
+    // Subscribes the client to the given patterns.
+    // Supported glob-style patterns:
+    //
+    // - h?llo subscribes to hello, hallo and hxllo
+    // - h*llo subscribes to hllo and heeeello
+    // - h[ae]llo subscribes to hello and hallo, but not hillo
+    // Use \ to escape special characters if you want to match them verbatim.
+    rpc PSubscribe(stream SubscribeRequest) returns (stream Message) {}
+
+    // Returns the number of unique patterns that are subscribed to by clients (that are
+    // performed using the PSUBSCRIBE command).
+    //
+    // Note that this isn't the count of clients subscribed to patterns, but the total number of
+    // unique patterns all the clients are subscribed to.
+    rpc NumPat(Null) returns (Int64) {}
+}
+
+message SubscribeRequest {
+    string type = 1;
+    repeated string channels = 2;
+}
+
+message Message {
+    string type = 1;
+    string pattern = 2;
+    string channel  = 3;
+   
+    oneof message_oneof {
+        int32 subscriptions = 4;
+        string message = 5;
+    }
+}
+
+message PublishRequest {
+    string channel = 1;
+    string message = 2;
+}
+
+message PublishReply {
+    int32 received = 1;
+}
+
+message ChannelsRequest {
+    optional string pattern = 1;
+}
+
+message ChannelsReply {
+    repeated string channels = 1;
+}
+
+message NumSubRequest {
+    repeated string channels = 1;
+}
+
+message NumSubReply {
+    message Result {
+        string channel = 1;
+        int32 subscribers = 2;
+    }
+    repeated Result results = 1;
+}
+
+message Null {
+
+}
+
+message Int64 {
+    int64 int64 = 1;
+}
